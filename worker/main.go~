@@ -1,0 +1,82 @@
+package main
+
+import (
+	"fmt"
+	"stg"
+	"hasher"
+	"time"
+	"strconv"
+	//"encoding/json"
+	"github.com/go-redis/redis"	
+)
+
+var client *redis.Client
+
+func main() {
+	
+	go stg.Server()
+	stg.Client()
+	
+	xtoken := stg.SecureToken
+	
+	fmt.Println("generated Token is ", xtoken)	
+	
+	go hasher.Server()
+	hasher.Client(xtoken)
+	
+	hash := hasher.Hash
+	
+	fmt.Println("Hash value is ", hash)	
+	
+	if (hash[0]=='0') {	
+	
+		client := redis.NewClient(&redis.Options{
+	   	Addr:     "localhost:6379",
+		})
+		
+		if(client.LLen("dates").Val()==0) {
+			client.RPush("dates",time.Now().Format("02-01-2006"))
+			client.RPush("counts",0)
+		} 
+		dates := client.RPop("dates").Val()
+	    client.RPush("dates",dates)
+			
+		if(dates==time.Now().Format("02-01-2006")){
+			fmt.Println("hi there")
+			dlen := client.LLen("dates").Val()
+			clen := client.LLen("counts").Val()
+			if(dlen==clen){
+				fmt.Println("hi fsffvfvdere")
+				cur_count := client.RPop("counts").Val()
+				i,err := strconv.Atoi(cur_count) 
+				if(err!=nil) {
+					panic(err)
+				}
+				i++
+				client.RPush("counts",i)
+			}else {
+				fmt.Println("dvfdere")
+				client.RPush("counts",1)
+			}
+			
+		}else {
+			client.RPush("dates",time.Now().Format("02-01-2006"))
+			client.RPush("counts",1)
+		}
+		
+		val, err := client.LRange("LuckyHashes",0,-1).Result()
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("hash", val)
+	
+		defer client.Close()
+
+		err = client.Publish("mychannel1", "hello").Err()
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		fmt.Println("Not a LuckyHash value")
+	}  
+}

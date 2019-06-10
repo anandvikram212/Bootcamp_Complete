@@ -1,0 +1,155 @@
+var app = require('express')();
+var http = require('http').Server(app);
+const socket = require('socket.io');
+var io = require('socket.io')(http);
+var redis = require('redis');
+var client = redis.createClient();
+
+
+app.get('/', function(req, res) {
+   res.sendfile('index.html');
+});
+
+client.on('connect', function() {
+	console.log('Redis client connected');
+});
+
+var clients = 0;
+io.on('connection', function(socket)  {
+
+   clients++;
+   io.sockets.emit('broadcast',{ description: clients + ' clients connected!'});
+   socket.broadcast.emit('newclientconnect',{ description: clients + ' clients connected!'});
+   
+   sendData(socket);
+   
+   socket.on('disconnect', function ()  {
+     clients--;
+      io.sockets.emit('broadcast',{ description: clients + ' clients connected!'});
+   });
+});
+   //client.on('connect', function() {
+		//console.log('Redis client connected');
+		//});
+	
+		//client.on('error', function (err) {
+		//console.log('Something went wrong ' + err);
+		//});
+
+	   //client.lrange('LuckyHashes',0,-1, function (error, result) {
+		//if (error) {
+		//    console.log(error);
+		//    throw error;
+		//}
+		//io.sockets.emit('luckyhashes',{ description: result });
+		//console.log('GET result ->' + result);
+   //});
+   
+   //client.subscribe('mychannel1');
+   ///////////////////////////////////////////////////////////
+  /*socket.on('disconnect', function () { 
+   const options = {width: 400, height: 200};
+	  const data = {
+		labels: ['a','b','c','d','e'],
+		series: [
+		  [1, 2, 3, 4, 5],
+		  [3, 4, 5, 6, 7]
+		]
+	  };
+	
+	io.sockets.emit('linechart',{ description: data });
+});*/
+   /////////////////////////////////////////////////////////////
+   //socket.on('disconnect', function () {
+    //  clients--;
+    //  io.sockets.emit('broadcast',{ description: clients + ' clients connected!'});
+   //});
+//});
+var b=1,y,z,x;
+var edate,ecount,edate1,ecount1;
+function sendData(socket) {
+	if(b==1)
+	{
+		b=b-1;
+		client.lrange('counts',0,-1, function (error, counted1) {
+			if (error) {
+				console.log(error);
+				throw error;
+			}
+			ecount=counted1;
+			console.log('GET count ->' + counted1);
+			
+		});
+		client.lrange('dates',0,-1, function (error, dated1) {
+			if (error) {
+				console.log(error);
+				throw error;
+			}
+			edate=dated1;
+			console.log('GET date ->' + dated1);
+		});
+
+		console.log('GET edate ->' + edate);
+		console.log('GET ecount ->' + ecount);
+		var z = {
+			labels: edate ,
+			series: [ecount] 
+		};
+		//console.log('dates ' + dates1);
+		console.log('GET z ->' + z);
+	 	x = z;
+		
+	}
+	else
+	{
+		b=b+1;
+		client.lrange('count',0,-1, function (error, counted) {
+			if (error) {
+				console.log(error);
+				throw error;
+			}
+			ecount1=counted;
+			console.log('GET count ->' + counted);
+			
+		});
+		client.lrange('date',0,-1, function (error, dated) {
+			if (error) {
+				console.log(error);
+				throw error;
+			}
+			edate1=dated;
+			console.log('GET date ->' + dated);
+		});
+
+		console.log('GET edate1 ->' + edate1);
+		console.log('GET ecount1 ->' + ecount1);
+		var y = {
+			labels: edate1 ,
+			series: [ecount1] 
+		};
+		//console.log('dates ' + dates1);
+		console.log('GET y ->' + y);
+	 	x = y;
+	}
+	io.sockets.emit('chart',{ description: x });	
+	client.on('error', function (err) {
+	console.log('Something went wrong ' + err);
+	});
+
+   client.lrange('date',0,-1, function (error, result) {
+		if (error) {
+			console.log(error);
+			throw error;
+		}
+		//io.sockets.emit('chart',{ description: result });
+		console.log('GET result ->' + result);
+	});
+
+    setTimeout(() => {
+        sendData(socket);
+	}, 2000);
+}
+
+http.listen(3000, function() {
+   console.log('listening on localhost:3000');
+});

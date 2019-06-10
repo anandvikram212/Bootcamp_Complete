@@ -1,0 +1,40 @@
+<html>
+  <head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+  <script src="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
+   <script type = "text/javascript" src = "index.js" ></script>
+  </head>
+  <div class="ct-chart ct-perfect-fourth"></div>
+
+  <script src = "/socket.io/socket.io.js"></script>
+  <script>
+  	var socket = io();
+      //socket.on('broadcast',function(data) {
+      //   document.body.innerHTML = '';
+      //   document.write(data.description);
+      //});
+
+
+     // socket.on('luckyhashes',function(data) {
+         //document.body.innerHTML = '';
+         //document.write(data.description);
+
+
+         //new Chartist.Line('.ct-chart', x);
+
+      //});
+      s
+      socket.on('chart',function(x) {
+		  var y = x.description;
+		  var options = {
+			  width: 800,
+			  height: 600
+		  };
+		  //document.body.innerHTML = '';
+          //document.write(y);
+          //document.write(y.labels);
+          new Chartist.Line('.ct-chart', y,options);
+      });
+
+  </script>
+</html>
